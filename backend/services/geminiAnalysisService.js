@@ -85,7 +85,7 @@ const analysisSchema = {
 export const generateDiseaseAnalysis = async (prescriptionData, medicineData) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-flash-latest',
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
@@ -165,7 +165,7 @@ const genericSchema = {
 export const generateGenericAlternatives = async (medicineName) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-flash-latest',
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: genericSchema,
