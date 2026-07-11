@@ -9,6 +9,13 @@ import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
 import prescriptionRoutes from './routes/prescriptionRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
+import medicineRoutes from './routes/medicineRoutes.js';
+import diseaseAnalysisRoutes from './routes/diseaseAnalysisRoutes.js';
+import genericRoutes from './routes/genericRoutes.js';
+import shopRoutes from './routes/shopRoutes.js';
+import cartRoutes from './routes/cartRoutes.js';
+import wishlistRoutes from './routes/wishlistRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
 
 dotenv.config();
 
@@ -36,6 +43,13 @@ app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/prescription', prescriptionRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/medicines', medicineRoutes);
+app.use('/api/disease-analysis', diseaseAnalysisRoutes);
+app.use('/api/generic', genericRoutes);
+app.use('/api/shop', shopRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

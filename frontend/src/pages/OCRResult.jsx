@@ -103,6 +103,18 @@ const OCRResult = () => {
               <p className="text-slate-400 mt-1">Structured data retrieved by AI OCR engine</p>
             </div>
             <OCRResultCard data={prescription.structuredData} />
+            
+            <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
+              <Link
+                to={`/disease-analysis/${id}`}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/30 flex items-center"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI Disease & Diet Analysis
+              </Link>
+            </div>
           </div>
         </div>
       </div>

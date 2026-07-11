@@ -28,10 +28,28 @@ const Navbar = () => {
                   Upload
                 </Link>
                 <Link
-                  to="/history"
+                  to="/medicines"
                   className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
                 >
-                  History
+                  DB
+                </Link>
+                <Link
+                  to="/store"
+                  className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
+                >
+                  Store
+                </Link>
+                <Link
+                  to="/generic-comparison"
+                  className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
+                >
+                  Generics
+                </Link>
+                <Link
+                  to="/cart"
+                  className="text-slate-300 hover:text-white font-medium transition-colors"
+                >
+                  Cart
                 </Link>
                 <Link
                   to="/profile"

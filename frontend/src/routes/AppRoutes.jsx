@@ -7,6 +7,24 @@ import Profile from '../pages/Profile';
 import PrescriptionUpload from '../pages/PrescriptionUpload';
 import OCRResult from '../pages/OCRResult';
 import UploadHistory from '../pages/UploadHistory';
+import MedicinesList from '../pages/MedicinesList';
+import MedicineDetails from '../pages/MedicineDetails';
+import AdminMedicines from '../pages/AdminMedicines';
+import AddMedicine from '../pages/AddMedicine';
+import EditMedicine from '../pages/EditMedicine';
+
+import DiseaseAnalysis from '../pages/DiseaseAnalysis';
+import DietRecommendation from '../pages/DietRecommendation';
+import PrescriptionGenerics from '../pages/PrescriptionGenerics';
+
+// Shopping Module Pages
+import MedicineStore from '../pages/MedicineStore';
+import GenericComparison from '../pages/GenericComparison';
+import Cart from '../pages/Cart';
+import Wishlist from '../pages/Wishlist';
+import Checkout from '../pages/Checkout';
+import OrderSuccess from '../pages/OrderSuccess';
+import OrderHistory from '../pages/OrderHistory';
 import Navbar from '../components/layout/Navbar';
 
 // Protected Route Component
@@ -68,6 +86,43 @@ const AppRoutes = () => {
           <Route path="/history" element={
             <ProtectedRoute>
               <UploadHistory />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/medicines" element={<MedicinesList />} />
+          <Route path="/medicines/:id" element={<MedicineDetails />} />
+          
+          <Route path="/disease-analysis/:prescriptionId" element={
+            <ProtectedRoute>
+              <DiseaseAnalysis />
+            </ProtectedRoute>
+          } />
+          <Route path="/disease-analysis/:prescriptionId/diet" element={
+            <ProtectedRoute>
+              <DietRecommendation />
+            </ProtectedRoute>
+          } />
+          <Route path="/disease-analysis/:prescriptionId/generics" element={
+            <ProtectedRoute>
+              <PrescriptionGenerics />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/medicines" element={
+            <ProtectedRoute>
+              <AdminMedicines />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/medicines/add" element={
+            <ProtectedRoute>
+              <AddMedicine />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/admin/medicines/edit/:id" element={
+            <ProtectedRoute>
+              <EditMedicine />
             </ProtectedRoute>
           } />
           
