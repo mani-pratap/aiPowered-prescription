@@ -1,56 +1,91 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { EasyOCR } from 'node-easyocr';
-import os from 'os';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 export const extractPrescriptionData = async (imageBuffer) => {
-  const ocr = new EasyOCR();
-  const tempFilePath = path.join(os.tmpdir(), `temp_prescription_${Date.now()}.png`);
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY environment variable is not defined.');
+  }
 
   try {
-    // Write buffer to a temporary file
-    fs.writeFileSync(tempFilePath, imageBuffer);
+    console.log('Initializing Gemini API client...');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    console.log('Initializing EasyOCR...');
-    await ocr.init(['en']);
-    
-    console.log(`Processing image with EasyOCR...`);
-    const result = await ocr.readText(tempFilePath);
-    
-    let allText = "";
-    if (result && Array.isArray(result)) {
-      allText = result.map(item => item.text).join('\n');
-    }
+    const schema = {
+      type: SchemaType.OBJECT,
+      properties: {
+        structuredData: {
+          type: SchemaType.OBJECT,
+          properties: {
+            doctor: {
+              type: SchemaType.OBJECT,
+              properties: {
+                name: { type: SchemaType.STRING },
+                hospital: { type: SchemaType.STRING },
+                address: { type: SchemaType.STRING },
+                phone: { type: SchemaType.STRING }
+              }
+            },
+            patient: {
+              type: SchemaType.OBJECT,
+              properties: {
+                name: { type: SchemaType.STRING },
+                age: { type: SchemaType.STRING },
+                gender: { type: SchemaType.STRING }
+              }
+            },
+            prescriptionDate: { type: SchemaType.STRING },
+            medicines: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  medicineName: { type: SchemaType.STRING },
+                  dosage: { type: SchemaType.STRING },
+                  strength: { type: SchemaType.STRING },
+                  frequency: { type: SchemaType.STRING },
+                  duration: { type: SchemaType.STRING },
+                  instructions: { type: SchemaType.STRING }
+                }
+              }
+            },
+            additionalNotes: { type: SchemaType.STRING }
+          }
+        },
+        rawOcrText: { type: SchemaType.STRING }
+      }
+    };
 
-    // Because EasyOCR is a local OCR model and doesn't output structured JSON,
-    // we'll put the raw extracted text into the additionalNotes field so it shows up in the frontend UI,
-    // and we'll still save it as rawOcrText.
+    const model = genAI.getGenerativeModel({
+      model: "gemini-3.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: schema
+      }
+    });
+
+    console.log('Processing image with Gemini OCR...');
+    const prompt = `Analyze this handwritten doctor prescription image. 
+1. Perform OCR to extract a line-by-line transcription of the text for rawOcrText.
+2. Parse the text and fill the structuredData fields.
+If some fields are not mentioned or illegible, leave them as empty strings.`;
+
+    const imagePart = {
+      inlineData: {
+        data: imageBuffer.toString("base64"),
+        mimeType: "image/webp"
+      }
+    };
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const responseText = result.response.text();
+    const parsedData = JSON.parse(responseText);
+
     return {
-      structuredData: {
-        doctor: { name: "", hospital: "", address: "", phone: "" },
-        patient: { name: "", age: "", gender: "" },
-        prescriptionDate: "",
-        medicines: [],
-        additionalNotes: allText || "No readable text found."
-      },
-      rawOcrText: allText 
+      structuredData: parsedData.structuredData,
+      rawOcrText: parsedData.rawOcrText
     };
   } catch (error) {
-    console.error("EasyOCR Extraction Error:", error.message || error);
+    console.error("Gemini OCR Extraction Error:", error.message || error);
     throw new Error(`OCR Extraction Failed: ${error.message}`);
-  } finally {
-    try {
-      await ocr.close();
-    } catch (e) {
-      console.error("Error closing EasyOCR:", e);
-    }
-    // Clean up temp file
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
-    }
   }
 };
+
