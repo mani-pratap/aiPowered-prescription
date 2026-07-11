@@ -103,17 +103,6 @@ const OCRResult = () => {
               <p className="text-slate-400 mt-1">Structured data retrieved by AI OCR engine</p>
             </div>
             <OCRResultCard data={prescription.structuredData} />
-
-            {/* Added Raw OCR Display so user can see what Tesseract extracted */}
-            <div className="mt-8 bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-              <h3 className="text-lg font-bold text-white mb-2">Raw Tesseract Output</h3>
-              <p className="text-sm text-slate-400 mb-4">
-                This is the exact raw text that Tesseract.js extracted from the image. Because it is handwriting, it may look like gibberish. Our Regex parser attempted to find structured keywords within this text.
-              </p>
-              <pre className="whitespace-pre-wrap text-slate-300 text-sm font-mono bg-black/50 p-4 rounded-xl border border-white/10 overflow-x-auto">
-                {prescription.rawOcrText || "No text could be extracted."}
-              </pre>
-            </div>
           </div>
         </div>
       </div>

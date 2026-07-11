@@ -1,7 +1,6 @@
 import Prescription from '../models/Prescription.js';
 import { uploadToCloudinary } from '../services/cloudinary.js';
 import { extractPrescriptionData } from '../services/ocrService.js';
-import { parseRawOCRText } from '../services/prescriptionParser.js';
 import sharp from 'sharp';
 
 // @desc    Upload prescription and run OCR
@@ -16,8 +15,8 @@ export const uploadPrescription = async (req, res, next) => {
 
     // Compress image
     const compressedImageBuffer = await sharp(req.file.buffer)
-      .resize({ width: 1200, withoutEnlargement: true }) // Reduce resolution for performance
-      .webp({ quality: 80 }) // Convert to webp for better compression
+      .resize({ width: 800, withoutEnlargement: true }) 
+      .webp({ quality: 60 }) 
       .toBuffer();
 
     // Create DB entry as processing
@@ -32,16 +31,13 @@ export const uploadPrescription = async (req, res, next) => {
       const cloudinaryResult = await uploadToCloudinary(compressedImageBuffer);
       console.log("cloudinaryResult", cloudinaryResult);
 
-      // 2. Run OCR (Tesseract.js)
-      const rawText = await extractPrescriptionData(cloudinaryResult.secure_url);
+      // 2. Run OCR (node-easyocr via Buffer)
+      const aiData = await extractPrescriptionData(compressedImageBuffer);
 
-      // 3. Parse raw text into structured JSON
-      const structuredData = parseRawOCRText(rawText);
-
-      // 4. Update database
+      // 3. Update database
       prescription.imageUrl = cloudinaryResult.secure_url;
-      prescription.rawOcrText = rawText;
-      prescription.structuredData = structuredData;
+      prescription.rawOcrText = aiData.rawOcrText;
+      prescription.structuredData = aiData.structuredData;
       prescription.status = 'completed';
       await prescription.save();
 
@@ -61,6 +57,7 @@ export const uploadPrescription = async (req, res, next) => {
     }
 
   } catch (error) {
+    console.error("AI Extraction Error:", error);
     next(error);
   }
 };
