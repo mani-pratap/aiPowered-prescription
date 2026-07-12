@@ -33,6 +33,8 @@ const registerUser = async (req, res, next) => {
         profileImage: user.profileImage,
         phoneNumber: user.phoneNumber,
         patientType: user.patientType,
+        primaryDisease: user.primaryDisease,
+        medicineSchedule: user.medicineSchedule,
         token: generateToken(user._id),
       });
     } else {

@@ -3,7 +3,7 @@ const ConfidenceIndicator = ({ confidenceStr }) => {
   let level = 'Medium';
   let color = 'bg-yellow-500';
   let percentage = 70;
-  
+
   const textLower = confidenceStr?.toLowerCase() || '';
   if (textLower.includes('high')) {
     level = 'High';
@@ -14,12 +14,12 @@ const ConfidenceIndicator = ({ confidenceStr }) => {
     color = 'bg-red-500';
     percentage = 40;
   }
-  
+
   const match = textLower.match(/(\d+)%/);
   if (match) {
     percentage = parseInt(match[1], 10);
   }
-  
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg mb-6">
       <div className="flex items-center justify-between mb-2">
@@ -29,11 +29,11 @@ const ConfidenceIndicator = ({ confidenceStr }) => {
           </svg>
           AI Confidence
         </h3>
-        <span className={`text-sm font-bold px-3 py-1 rounded-full bg-opacity-20 ${color.replace('bg-', 'text-')} ${color.replace('bg-', 'bg-')}`}>
+        <span className={`text-sm font-bold px-3 py-1 rounded-full bg-opacity-20 ${color.replace('bg-', 'text-')} ${color.replace('bg-', 'bg-')} text-white`}>
           {confidenceStr}
         </span>
       </div>
-      
+
       <div className="w-full bg-slate-800 rounded-full h-2.5 mt-4">
         <div className={`h-2.5 rounded-full ${color}`} style={{ width: `${percentage}%` }}></div>
       </div>

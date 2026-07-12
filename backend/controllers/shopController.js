@@ -25,6 +25,13 @@ export const getShopMedicines = async (req, res) => {
       query.prescriptionRequired = rxRequired === 'true';
     }
 
+    // Safety Constraint: Strictly block all sleeping pills and sedatives
+    const sleepPillRegex = /sleep|insomnia|sedative|zolpidem|diazepam|alprazolam|lorazepam|clonazepam|nitrazepam|zopiclone/i;
+    query.$and = [
+      { medicineName: { $not: sleepPillRegex } },
+      { category: { $not: sleepPillRegex } }
+    ];
+
     let sortOptions = {};
     if (sort) {
       switch (sort) {

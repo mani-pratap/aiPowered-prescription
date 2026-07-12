@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { User, Mail, Phone, Lock, Save, Loader2, Camera, Plus, Trash2, Edit2, X } from 'lucide-react';
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [medicines, setMedicines] = useState(user?.medicineSchedule || []);
@@ -67,6 +67,7 @@ const Profile = () => {
       setMedicines(res.data.medicineSchedule || []);
       setPatientType(res.data.patientType);
       setPrimaryDisease(res.data.primaryDisease);
+      updateUser(res.data); // Sync context
       toast.success('Patient settings updated!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update settings');
@@ -89,10 +90,12 @@ const Profile = () => {
       if (editingMedicineId) {
         const res = await api.put(`/profile/medicine/${editingMedicineId}`, payload);
         setMedicines(res.data);
+        updateUser({ medicineSchedule: res.data });
         toast.success('Medicine updated!');
       } else {
         const res = await api.post('/profile/medicine', payload);
         setMedicines(res.data);
+        updateUser({ medicineSchedule: res.data });
         toast.success('Medicine added!');
       }
       setIsAddingMedicine(false);
@@ -111,6 +114,7 @@ const Profile = () => {
     try {
       const res = await api.delete(`/profile/medicine/${id}`);
       setMedicines(res.data);
+      updateUser({ medicineSchedule: res.data });
       toast.success('Medicine deleted!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to delete medicine');
@@ -144,11 +148,17 @@ const Profile = () => {
         <div className="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 h-32 relative">
           <div className="absolute -bottom-12 left-8">
             <div className="relative group">
-              <img
-                src={user?.profileImage}
-                alt={user?.fullName}
-                className="w-24 h-24 rounded-2xl border-4 border-slate-900 object-cover bg-slate-800"
-              />
+              {user?.profileImage && !user.profileImage.includes('anonymous-avatar-icon') ? (
+                <img
+                  src={user.profileImage}
+                  alt={user?.fullName}
+                  className="w-24 h-24 rounded-2xl border-4 border-slate-900 object-cover bg-slate-800"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-2xl border-4 border-slate-900 bg-indigo-600 flex items-center justify-center text-4xl font-black text-white">
+                  {user?.fullName?.charAt(0).toUpperCase()}
+                </div>
+              )}
               <button className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <Camera className="w-6 h-6 text-white" />
               </button>

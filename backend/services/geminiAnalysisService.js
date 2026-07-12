@@ -177,7 +177,8 @@ export const generateGenericAlternatives = async (medicineName) => {
       You are an expert pharmacist AI. 
       The user searched for the branded medicine "${medicineName}".
       Provide its typical chemical composition, generic name, a typical Indian price (in INR), and a reputable manufacturer.
-      Then, generate 5 real medicine alternatives available in India that have the EXACT same chemical composition. Include a mix of both popular branded medicines and cheaper generic alternatives.
+      Then, generate 8 real medicine alternatives available in India that have the EXACT same chemical composition. 
+      Critically: Include an equal mix of exactly 4 popular premium branded medicines and 4 cheaper generic alternatives.
       Generate random realistic MongoDB ObjectIds for the _id fields in alternatives.
       Do not hallucinate the generics - use real Indian generic alternatives if possible, or highly plausible ones.
       Return the output strictly matching the JSON schema.
