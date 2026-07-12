@@ -6,7 +6,7 @@ import cartService from '../../services/cartService';
 import wishlistService from '../../services/wishlistService';
 import { useAuth } from '../../context/AuthContext';
 
-const ShopMedicineCard = ({ medicine, onWishlistUpdate }) => {
+const ShopMedicineCard = ({ medicine, onWishlistUpdate, onDetailsClick }) => {
   const { user } = useAuth();
   const [isAdding, setIsAdding] = useState(false);
   const [isWishlisting, setIsWishlisting] = useState(false);
@@ -90,12 +90,21 @@ const ShopMedicineCard = ({ medicine, onWishlistUpdate }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Link 
-            to={`/store/medicine/${medicine._id}`}
-            className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-semibold transition-colors text-sm"
-          >
-            Details
-          </Link>
+          {onDetailsClick ? (
+            <button
+              onClick={() => onDetailsClick(medicine)}
+              className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-semibold transition-colors text-sm"
+            >
+              Details
+            </button>
+          ) : (
+            <Link 
+              to={`/store/medicine/${medicine._id}`}
+              className="flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-semibold transition-colors text-sm"
+            >
+              Details
+            </Link>
+          )}
           <button 
             onClick={handleAddToCart}
             disabled={isAdding}

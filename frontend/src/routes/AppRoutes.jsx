@@ -126,6 +126,41 @@ const AppRoutes = () => {
             </ProtectedRoute>
           } />
           
+          {/* Shopping Module Routes */}
+          <Route path="/store" element={<MedicineStore />} />
+          <Route path="/store/medicine/:id" element={<MedicineDetails />} />
+          <Route path="/compare" element={<GenericComparison />} />
+          
+          <Route path="/cart" element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/wishlist" element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/order-success" element={
+            <ProtectedRoute>
+              <OrderSuccess />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <OrderHistory />
+            </ProtectedRoute>
+          } />
+          
           {/* 404 Route */}
           <Route path="*" element={
             <div className="flex flex-col items-center justify-center min-h-[80vh]">

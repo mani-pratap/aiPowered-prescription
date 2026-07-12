@@ -45,6 +45,14 @@ const prescriptionSchema = mongoose.Schema(
       enum: ['processing', 'completed', 'failed'],
       default: 'processing',
     },
+    imageHash: {
+      type: String,
+      index: true,
+    },
+    genericsData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
   {
     timestamps: true,

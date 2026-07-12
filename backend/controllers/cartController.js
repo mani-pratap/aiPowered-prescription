@@ -32,7 +32,18 @@ export const addToCart = async (req, res) => {
 export const getCart = async (req, res) => {
   try {
     const cart = await Cart.find({ user: req.user._id }).populate('medicine');
-    res.json(cart);
+    
+    // Automatically clean up cart items where the medicine was deleted or doesn't exist
+    const validCart = [];
+    for (let item of cart) {
+      if (!item.medicine) {
+        await Cart.findByIdAndDelete(item._id);
+      } else {
+        validCart.push(item);
+      }
+    }
+
+    res.json(validCart);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

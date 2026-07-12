@@ -27,7 +27,7 @@ const Navbar = () => {
                 >
                   Upload
                 </Link>
-                <Link
+                {/* <Link
                   to="/medicines"
                   className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
                 >
@@ -44,7 +44,7 @@ const Navbar = () => {
                   className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
                 >
                   Generics
-                </Link>
+                </Link> */}
                 <Link
                   to="/cart"
                   className="text-slate-300 hover:text-white font-medium transition-colors"

@@ -114,6 +114,10 @@ const MedicineDetails = () => {
             
             <div className="mt-6 flex flex-wrap gap-4">
               <div className="bg-slate-800 rounded-lg px-4 py-2 border border-slate-700">
+                <span className="block text-xs text-slate-400 uppercase font-semibold">Formula / Composition</span>
+                <span className="text-slate-200">{medicine.composition}</span>
+              </div>
+              <div className="bg-slate-800 rounded-lg px-4 py-2 border border-slate-700">
                 <span className="block text-xs text-slate-400 uppercase font-semibold">Dosage Form</span>
                 <span className="text-slate-200">{medicine.dosageForm}</span>
               </div>
