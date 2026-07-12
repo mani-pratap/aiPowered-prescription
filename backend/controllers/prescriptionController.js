@@ -117,7 +117,10 @@ export const getPrescription = async (req, res, next) => {
 // @access  Private
 export const getPrescriptionHistory = async (req, res, next) => {
   try {
-    const prescriptions = await Prescription.find({ user: req.user._id }).sort({ createdAt: -1 });
+    const prescriptions = await Prescription.find({ 
+      user: req.user._id,
+      status: { $ne: 'failed' } 
+    }).sort({ createdAt: -1 });
 
     res.json({
       success: true,
