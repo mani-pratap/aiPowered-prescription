@@ -80,7 +80,7 @@ const Register = () => {
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Create an account</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Join SmartRx and start managing your health
+            Join ArogyaSaathi and start managing your health
           </p>
         </div>
 

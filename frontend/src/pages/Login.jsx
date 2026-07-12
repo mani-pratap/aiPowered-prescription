@@ -30,7 +30,7 @@ const Login = () => {
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white">Welcome back</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Sign in to your SmartRx account
+            Sign in to your ArogyaSaathi account
           </p>
         </div>
 

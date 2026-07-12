@@ -43,7 +43,7 @@ const Navbar = () => {
               <Stethoscope className="w-6 h-6 text-indigo-400" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              SmartRx
+              ArogyaSaathi
             </span>
           </Link>
 
