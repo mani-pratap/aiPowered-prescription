@@ -1,6 +1,7 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import api from '../services/api';
-import { toast } from 'react-toastify';
+import { createContext, useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/api";
+import { toast } from "react-toastify";
 
 const AuthContext = createContext();
 
@@ -9,12 +10,13 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
+    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+
     if (storedUser && token) {
       setUser(JSON.parse(storedUser));
     }
@@ -23,55 +25,56 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await api.post('/auth/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data));
+      const res = await api.post("/auth/login", { email, password });
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data));
       setUser(res.data);
-      toast.success('Logged in successfully!');
+      toast.success("Logged in successfully!");
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      toast.error(error.response?.data?.message || "Login failed");
       return false;
     }
   };
 
   const register = async (userData) => {
     try {
-      const res = await api.post('/auth/register', userData);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data));
+      const res = await api.post("/auth/register", userData);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data));
       setUser(res.data);
-      toast.success('Registered successfully!');
+      toast.success("Registered successfully!");
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed');
+      toast.error(error.response?.data?.message || "Registration failed");
       return false;
     }
   };
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post("/auth/logout");
     } catch (error) {
       console.error(error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setUser(null);
-      toast.info('Logged out');
+      toast.info("Logged out");
+      navigate("/");
     }
   };
 
   const updateProfile = async (userData) => {
     try {
-      const res = await api.put('/auth/profile', userData);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data));
+      const res = await api.put("/auth/profile", userData);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data));
       setUser(res.data);
-      toast.success('Profile updated!');
+      toast.success("Profile updated!");
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Update failed');
+      toast.error(error.response?.data?.message || "Update failed");
       return false;
     }
   };
@@ -79,11 +82,21 @@ export const AuthProvider = ({ children }) => {
   const updateUser = (data) => {
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, updateProfile, updateUser, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        register,
+        logout,
+        updateProfile,
+        updateUser,
+        loading,
+      }}
+    >
       {!loading && children}
     </AuthContext.Provider>
   );
