@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("user", JSON.stringify(res.data));
       setUser(res.data);
       toast.success("Logged in successfully!");
+      navigate("/store");
       return true;
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
