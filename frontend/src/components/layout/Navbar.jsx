@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Stethoscope, LogOut, ShoppingCart, Camera } from 'lucide-react';
+import { Stethoscope, LogOut, ShoppingCart, Camera, MapPin } from 'lucide-react';
 import cartService from '../../services/cartService';
 
 const Navbar = () => {
@@ -69,6 +69,13 @@ const Navbar = () => {
                 >
                   <Camera className="w-4 h-4" />
                   <span>Food Scanner</span>
+                </Link>
+                <Link
+                  to="/pharmacies"
+                  className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors hidden sm:flex items-center space-x-1"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>Pharmacies</span>
                 </Link>
                 <Link
                   to="/store"

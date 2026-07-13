@@ -55,7 +55,7 @@ export const extractPrescriptionData = async (imageBuffer) => {
     };
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
+      model: "gemini-3-flash-preview",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: schema
