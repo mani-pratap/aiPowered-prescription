@@ -18,9 +18,11 @@ import wishlistRoutes from './routes/wishlistRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import pharmacyRoutes from './routes/pharmacyRoutes.js';
+import { startCronJobs } from './services/cronService.js';
 dotenv.config();
 
 connectDB();
+startCronJobs();
 
 const app = express();
 

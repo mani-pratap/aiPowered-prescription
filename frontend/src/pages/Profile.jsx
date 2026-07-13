@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'; // Force Vite Reload
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -29,9 +29,7 @@ const Profile = () => {
       medicineName: '',
       dosage: '',
       frequency: 'Once Daily',
-      morning: false,
-      afternoon: false,
-      night: false,
+      reminderTimes: [],
       startDate: '',
       refillCycle: 30,
       dailyReminderEnabled: false,
@@ -141,7 +139,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-8">
       
       {/* Profile Section */}
       <div className="bg-slate-900/50 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
@@ -159,7 +157,12 @@ const Profile = () => {
                   {user?.fullName?.charAt(0).toUpperCase()}
                 </div>
               )}
-              <button className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              {patientType === 'regular' && (
+                <div className="absolute -top-3 -right-3 bg-gradient-to-br from-purple-500 to-indigo-600 w-8 h-8 rounded-full border-2 border-slate-900 flex items-center justify-center shadow-lg shadow-purple-500/30 z-10" title="Regular Medicine User">
+                  <span className="text-white text-sm font-bold">R</span>
+                </div>
+              )}
+              <button className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
                 <Camera className="w-6 h-6 text-white" />
               </button>
             </div>
@@ -360,17 +363,51 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-2">Intake Timing</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input type="checkbox" {...registerMed('morning')} className="rounded bg-slate-900 border-white/10 text-purple-500 focus:ring-purple-500 focus:ring-offset-slate-900" /> Morning
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input type="checkbox" {...registerMed('afternoon')} className="rounded bg-slate-900 border-white/10 text-purple-500 focus:ring-purple-500 focus:ring-offset-slate-900" /> Afternoon
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input type="checkbox" {...registerMed('night')} className="rounded bg-slate-900 border-white/10 text-purple-500 focus:ring-purple-500 focus:ring-offset-slate-900" /> Night
-                  </label>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Custom Alert Times</label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input 
+                      type="time" 
+                      id="newTimeInput"
+                      className="px-3 py-2 bg-slate-900 border border-white/10 rounded-lg text-white text-sm focus:ring-purple-500" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const timeInput = document.getElementById('newTimeInput');
+                        if (timeInput.value) {
+                          const currentTimes = watchMed('reminderTimes') || [];
+                          if (!currentTimes.includes(timeInput.value)) {
+                            setMedValue('reminderTimes', [...currentTimes, timeInput.value]);
+                          }
+                          timeInput.value = '';
+                        }
+                      }}
+                      className="px-3 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-sm hover:bg-purple-500/30 transition-colors"
+                    >
+                      Add Time
+                    </button>
+                  </div>
+                  
+                  {watchMed('reminderTimes')?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {watchMed('reminderTimes').map((time, idx) => (
+                        <div key={idx} className="flex items-center gap-1 bg-slate-800 border border-white/10 px-2 py-1 rounded text-xs text-white">
+                          <span className="font-mono text-purple-300">{time}</span>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const currentTimes = watchMed('reminderTimes');
+                              setMedValue('reminderTimes', currentTimes.filter(t => t !== time));
+                            }}
+                            className="text-slate-500 hover:text-red-400"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -437,10 +474,12 @@ const Profile = () => {
                     <p className="text-sm text-slate-400 mt-1">
                       {med.frequency} • Started: {new Date(med.startDate).toLocaleDateString()}
                     </p>
-                    <div className="flex gap-2 mt-2">
-                      {med.morning && <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded text-xs">Morning</span>}
-                      {med.afternoon && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded text-xs">Afternoon</span>}
-                      {med.night && <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded text-xs">Night</span>}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {med.reminderTimes?.length > 0 && med.reminderTimes.map((time, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-mono border border-purple-500/30">
+                          ⏰ {time}
+                        </span>
+                      ))}
                       {med.dailyReminderEnabled && <span className="px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-xs">Daily Reminder ON</span>}
                       {med.refillReminderEnabled && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-xs">Refill Reminder ON</span>}
                     </div>

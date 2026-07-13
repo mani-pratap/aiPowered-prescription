@@ -57,7 +57,7 @@ const addMedicine = async (req, res, next) => {
     
     if (user) {
       const {
-        medicineName, dosage, frequency, morning, afternoon, night,
+        medicineName, dosage, frequency, reminderTimes,
         startDate, refillCycle, dailyReminderEnabled, refillReminderEnabled, reminderBeforeDays, status
       } = req.body;
       
@@ -70,9 +70,7 @@ const addMedicine = async (req, res, next) => {
         medicineName,
         dosage,
         frequency,
-        morning: morning || false,
-        afternoon: afternoon || false,
-        night: night || false,
+        reminderTimes: Array.isArray(reminderTimes) ? reminderTimes : [],
         startDate,
         refillCycle: refillCycle || 30,
         dailyReminderEnabled: dailyReminderEnabled || false,
@@ -84,6 +82,48 @@ const addMedicine = async (req, res, next) => {
       user.medicineSchedule.push(newMedicine);
       const updatedUser = await user.save();
 
+      res.status(201).json(updatedUser.medicineSchedule);
+    } else {
+      res.status(404);
+      throw new Error('User not found');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Add multiple medicines to schedule (Batch)
+// @route   POST /api/profile/medicine/batch
+// @access  Private
+const addMedicinesBatch = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (user) {
+      const { medicines } = req.body;
+      
+      if (!Array.isArray(medicines) || medicines.length === 0) {
+        res.status(400);
+        throw new Error('Please provide an array of medicines');
+      }
+
+      medicines.forEach(med => {
+        const newMedicine = {
+          medicineName: med.medicineName,
+          dosage: med.dosage || 'As prescribed',
+          frequency: med.frequency || 'Once Daily',
+          reminderTimes: Array.isArray(med.reminderTimes) ? med.reminderTimes : [],
+          startDate: med.startDate || new Date().toISOString().split('T')[0],
+          refillCycle: med.refillCycle || 30,
+          dailyReminderEnabled: med.dailyReminderEnabled !== undefined ? med.dailyReminderEnabled : false,
+          refillReminderEnabled: med.refillReminderEnabled !== undefined ? med.refillReminderEnabled : false,
+          reminderBeforeDays: med.reminderBeforeDays || 5,
+          status: med.status || 'active'
+        };
+        user.medicineSchedule.push(newMedicine);
+      });
+
+      const updatedUser = await user.save();
       res.status(201).json(updatedUser.medicineSchedule);
     } else {
       res.status(404);
@@ -108,9 +148,7 @@ const updateMedicine = async (req, res, next) => {
         medicine.medicineName = req.body.medicineName || medicine.medicineName;
         medicine.dosage = req.body.dosage || medicine.dosage;
         medicine.frequency = req.body.frequency || medicine.frequency;
-        if (req.body.morning !== undefined) medicine.morning = req.body.morning;
-        if (req.body.afternoon !== undefined) medicine.afternoon = req.body.afternoon;
-        if (req.body.night !== undefined) medicine.night = req.body.night;
+        if (req.body.reminderTimes !== undefined) medicine.reminderTimes = Array.isArray(req.body.reminderTimes) ? req.body.reminderTimes : [];
         medicine.startDate = req.body.startDate || medicine.startDate;
         medicine.refillCycle = req.body.refillCycle || medicine.refillCycle;
         if (req.body.dailyReminderEnabled !== undefined) medicine.dailyReminderEnabled = req.body.dailyReminderEnabled;
@@ -166,6 +204,7 @@ export {
   getReminders,
   updateReminders,
   addMedicine,
+  addMedicinesBatch,
   updateMedicine,
   deleteMedicine
 };

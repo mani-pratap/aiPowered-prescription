@@ -4,6 +4,7 @@ import {
   getReminders,
   updateReminders,
   addMedicine,
+  addMedicinesBatch,
   updateMedicine,
   deleteMedicine,
 } from '../controllers/profileController.js';
@@ -16,6 +17,9 @@ router.route('/reminders')
 
 router.route('/medicine')
   .post(protect, addMedicine);
+
+router.route('/medicine/batch')
+  .post(protect, addMedicinesBatch);
 
 router.route('/medicine/:id')
   .put(protect, updateMedicine)

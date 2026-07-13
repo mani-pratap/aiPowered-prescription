@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Stethoscope, LogOut, ShoppingCart, Camera, MapPin } from 'lucide-react';
+import { Stethoscope, LogOut, ShoppingCart, Camera, MapPin, Bell, CheckCircle } from 'lucide-react';
 import cartService from '../../services/cartService';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const [cartCount, setCartCount] = useState(0);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState({ missed: [], upcoming: [] });
 
   const fetchCartCount = async () => {
     if (user) {
@@ -20,17 +22,58 @@ const Navbar = () => {
     }
   };
 
+  const calculateNotifications = () => {
+    if (!user || !user.medicineSchedule) return;
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeVal = currentHour * 60 + currentMinute;
+
+    const missed = [];
+    const upcoming = [];
+
+    user.medicineSchedule.forEach(med => {
+      if (med.status !== 'active') return;
+      if (!med.reminderTimes || med.reminderTimes.length === 0) return;
+
+      med.reminderTimes.forEach(timeStr => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const timeVal = hours * 60 + minutes;
+        
+        const notifItem = {
+          id: `${med._id}-${timeStr}`,
+          medicineName: med.medicineName,
+          time: timeStr
+        };
+
+        if (timeVal < currentTimeVal) {
+          missed.push(notifItem);
+        } else {
+          upcoming.push(notifItem);
+        }
+      });
+    });
+
+    setNotifications({ missed, upcoming });
+  };
+
   useEffect(() => {
     fetchCartCount();
+    calculateNotifications();
 
     const handleCartUpdate = () => {
       fetchCartCount();
     };
 
     window.addEventListener('cartUpdated', handleCartUpdate);
+    
+    // Check notifications every minute
+    const notifInterval = setInterval(calculateNotifications, 60000);
 
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
+      clearInterval(notifInterval);
     };
   }, [user]);
 
@@ -94,19 +137,116 @@ const Navbar = () => {
                     </span>
                   )}
                 </Link>
+
+                {/* Notifications Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                    className="relative text-slate-300 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/5"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {(notifications.missed.length > 0 || notifications.upcoming.length > 0) && (
+                      <span className="absolute top-1 right-1 inline-flex items-center justify-center w-2 h-2 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-purple-500 rounded-full animate-pulse">
+                      </span>
+                    )}
+                  </button>
+
+                  {isNotificationOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsNotificationOpen(false)}></div>
+                      <div className="absolute right-0 mt-2 w-80 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                        <div className="p-4 border-b border-white/10 bg-slate-800/50">
+                          <h3 className="font-bold text-white flex items-center">
+                            <Bell className="w-4 h-4 mr-2 text-purple-400" /> Reminders Today
+                          </h3>
+                        </div>
+                        
+                        <div className="max-h-96 overflow-y-auto">
+                          {notifications.missed.length === 0 && notifications.upcoming.length === 0 ? (
+                            <div className="p-6 text-center text-slate-400 flex flex-col items-center">
+                              <CheckCircle className="w-8 h-8 text-emerald-500/50 mb-2" />
+                              <p className="text-sm">No active reminders today!</p>
+                            </div>
+                          ) : (
+                            <div className="p-2 space-y-4">
+                              {notifications.missed.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-bold text-red-400 uppercase tracking-wider px-2 mb-2">Missed</h4>
+                                  <div className="space-y-1">
+                                    {notifications.missed.map(notif => (
+                                      <div key={notif.id} className="flex items-center justify-between p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                                        <div className="flex items-center">
+                                          <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                                          <span className="text-sm text-slate-200">{notif.medicineName}</span>
+                                        </div>
+                                        <span className="text-xs font-mono text-red-300">{notif.time}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {notifications.upcoming.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider px-2 mb-2">Upcoming</h4>
+                                  <div className="space-y-1">
+                                    {notifications.upcoming.map(notif => (
+                                      <div key={notif.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 transition-colors">
+                                        <div className="flex items-center">
+                                          <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                                          <span className="text-sm text-slate-200">{notif.medicineName}</span>
+                                        </div>
+                                        <span className="text-xs font-mono text-emerald-300">{notif.time}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="p-3 border-t border-white/10 bg-slate-800/50">
+                          <Link 
+                            to="/profile" 
+                            onClick={() => setIsNotificationOpen(false)}
+                            className="block w-full text-center text-sm text-indigo-400 hover:text-indigo-300 font-medium py-1"
+                          >
+                            Manage Reminder Times
+                          </Link>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <Link
                   to="/profile"
                   className="flex items-center space-x-2 text-slate-300 hover:text-white transition-colors"
                 >
                   {user?.profileImage && !user.profileImage.includes('anonymous-avatar-icon') ? (
-                    <img
-                      src={user.profileImage}
-                      alt={user.fullName}
-                      className="w-8 h-8 rounded-full border border-indigo-500/50 object-cover"
-                    />
+                    <div className="relative">
+                      <img
+                        src={user.profileImage}
+                        alt={user.fullName}
+                        className="w-8 h-8 rounded-full border border-indigo-500/50 object-cover"
+                      />
+                      {user?.patientType === 'regular' && (
+                        <div className="absolute -top-1 -right-1 bg-gradient-to-br from-purple-500 to-indigo-600 w-3.5 h-3.5 rounded-full border border-slate-950 flex items-center justify-center shadow-sm z-10" title="Regular Medicine User">
+                          <span className="text-white text-[9px] font-bold leading-none mt-[1px]">R</span>
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full border border-indigo-500/50 bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-                      {user?.fullName?.charAt(0).toUpperCase()}
+                    <div className="relative">
+                      <div className="w-8 h-8 rounded-full border border-indigo-500/50 bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                        {user?.fullName?.charAt(0).toUpperCase()}
+                      </div>
+                      {user?.patientType === 'regular' && (
+                        <div className="absolute -top-1 -right-1 bg-gradient-to-br from-purple-500 to-indigo-600 w-3.5 h-3.5 rounded-full border border-slate-950 flex items-center justify-center shadow-sm z-10" title="Regular Medicine User">
+                          <span className="text-white text-[9px] font-bold leading-none mt-[1px]">R</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <span className="hidden sm:inline-block font-medium">{user.fullName}</span>

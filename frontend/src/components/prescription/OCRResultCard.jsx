@@ -1,9 +1,57 @@
-import React from 'react';
-import { Pill, Calendar, User, Building, Phone, Clock, AlertCircle, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Pill, Calendar, User, Building, Phone, Clock, AlertCircle, MapPin, Bell, X, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 
 const OCRResultCard = ({ data }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [morningTime, setMorningTime] = useState('08:00');
+  const [nightTime, setNightTime] = useState('20:00');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { updateUser } = useAuth();
+  const navigate = useNavigate();
+
   if (!data) return null;
+
+  const handleSetupReminders = async () => {
+    setIsSubmitting(true);
+    try {
+      // Map OCR medicines to backend schema
+      const mappedMedicines = data.medicines.map(med => {
+        let times = [];
+        const freqStr = med.frequency ? med.frequency.toLowerCase() : '';
+        
+        if (freqStr.includes('twice') || freqStr.includes('2')) {
+          times = [morningTime, nightTime];
+        } else if (freqStr.includes('night') || freqStr.includes('bed')) {
+          times = [nightTime];
+        } else {
+          times = [morningTime];
+        }
+
+        return {
+          medicineName: med.medicineName || 'Unknown Medicine',
+          dosage: med.dosage || med.strength || 'As prescribed',
+          frequency: med.frequency || 'Once Daily',
+          reminderTimes: times,
+          startDate: data.prescriptionDate || new Date().toISOString().split('T')[0],
+          dailyReminderEnabled: true
+        };
+      });
+
+      const res = await api.post('/profile/medicine/batch', { medicines: mappedMedicines });
+      updateUser({ medicineSchedule: res.data });
+      toast.success('Medicines added to your reminders!');
+      setIsModalOpen(false);
+      navigate('/profile'); // Redirect to profile to see them
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to setup reminders');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -99,6 +147,18 @@ const OCRResultCard = ({ data }) => {
             </div>
           )}
         </div>
+        
+        {data.medicines?.length > 0 && (
+          <div className="mt-6 flex justify-center">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white px-6 py-3 rounded-xl font-bold flex items-center shadow-lg shadow-indigo-500/25 transition-all transform hover:scale-105"
+            >
+              <Bell className="w-5 h-5 mr-2" />
+              Set Up Reminders for These Medicines
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Additional Notes */}
@@ -111,6 +171,65 @@ const OCRResultCard = ({ data }) => {
           <p className="text-slate-300 text-sm leading-relaxed">
             {data.additionalNotes}
           </p>
+        </div>
+      )}
+
+      {/* Reminder Time Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white flex items-center">
+                <Bell className="w-5 h-5 mr-2 text-indigo-400" />
+                Configure Reminders
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <p className="text-slate-300 text-sm mb-6">
+              At what time do you want to be reminded for your Morning and Night doses? We will automatically assign these to the extracted medicines based on their frequency.
+            </p>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Morning Dose Time</label>
+                <input 
+                  type="time" 
+                  value={morningTime}
+                  onChange={(e) => setMorningTime(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-1">Night Dose Time</label>
+                <input 
+                  type="time" 
+                  value={nightTime}
+                  onChange={(e) => setNightTime(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSetupReminders}
+                disabled={isSubmitting}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors flex items-center shadow-lg shadow-indigo-500/25 disabled:opacity-50"
+              >
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Bell className="w-5 h-5 mr-2" />}
+                Import & Enable Reminders
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
