@@ -16,7 +16,7 @@ import shopRoutes from './routes/shopRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import wishlistRoutes from './routes/wishlistRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
-
+import foodRoutes from './routes/foodRoutes.js';
 dotenv.config();
 
 connectDB();
@@ -50,7 +50,7 @@ app.use('/api/shop', shopRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
-
+app.use('/api/food', foodRoutes);
 // Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);

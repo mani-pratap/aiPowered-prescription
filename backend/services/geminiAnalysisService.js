@@ -85,7 +85,7 @@ const analysisSchema = {
 export const generateDiseaseAnalysis = async (prescriptionData, medicineData) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
+      model: 'gemini-3-flash-preview',
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
@@ -165,7 +165,7 @@ const genericSchema = {
 export const generateGenericAlternatives = async (medicineName) => {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
+      model: 'gemini-3-flash-preview',
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: genericSchema,
@@ -192,3 +192,58 @@ export const generateGenericAlternatives = async (medicineName) => {
     throw new Error('Failed to generate generic alternatives from AI');
   }
 };
+
+const foodSafetySchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    foodIdentified: { type: SchemaType.STRING },
+    verdict: { type: SchemaType.STRING, description: "Must be 'Eat', 'Avoid', or 'Moderation'" },
+    reasoning: { 
+      type: SchemaType.ARRAY, 
+      items: { type: SchemaType.STRING },
+      description: "Creative, engaging, and detailed bullet points explaining why it's safe or dangerous based on their specific medical condition and active medicines." 
+    }
+  },
+  required: ["foodIdentified", "verdict", "reasoning"]
+};
+
+export const analyzeFoodSafety = async (imageBase64, mimeType, medicalContext) => {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3-flash-preview',
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: foodSafetySchema,
+        temperature: 0.4,
+      }
+    });
+
+    const prompt = `
+      You are an expert, friendly, and highly creative Medical AI Dietitian.
+      The user has uploaded an image of a food or meal they are about to eat.
+      
+      Here is their medical context (their active diseases and active medicines):
+      ${medicalContext || 'No specific medical context provided. Provide general health advice.'}
+      
+      Identify the food in the image with an enthusiastic tone.
+      Analyze whether it is safe for the user to consume this food based strictly on their medical context.
+      Provide the reasoning as a list of distinct, creative, and medically accurate bullet points. 
+      Return the output matching the JSON schema. Verdict must be "Eat", "Avoid", or "Moderation".
+    `;
+
+    const imagePart = {
+      inlineData: {
+        data: imageBase64,
+        mimeType: mimeType
+      }
+    };
+
+    const result = await model.generateContent([prompt, imagePart]);
+    const text = result.response.text();
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Gemini Food Safety Service Error:', error);
+    throw new Error('Failed to analyze food safety from AI');
+  }
+};
+

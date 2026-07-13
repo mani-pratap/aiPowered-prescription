@@ -26,6 +26,7 @@ import Checkout from '../pages/Checkout';
 import OrderSuccess from '../pages/OrderSuccess';
 import OrderHistory from '../pages/OrderHistory';
 import Navbar from '../components/layout/Navbar';
+import FoodScanner from '../pages/FoodScanner';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -86,6 +87,12 @@ const AppRoutes = () => {
           <Route path="/history" element={
             <ProtectedRoute>
               <UploadHistory />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/food-scanner" element={
+            <ProtectedRoute>
+              <FoodScanner />
             </ProtectedRoute>
           } />
           
