@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Stethoscope, LogOut, ShoppingCart } from 'lucide-react';
+import { Stethoscope, LogOut, ShoppingCart, Camera } from 'lucide-react';
 import cartService from '../../services/cartService';
 
 const Navbar = () => {
@@ -52,9 +52,23 @@ const Navbar = () => {
               <>
                 <Link
                   to="/upload"
+                  className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:flex items-center space-x-1"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Upload Rx</span>
+                </Link>
+                <Link
+                  to="/history"
                   className="text-slate-300 hover:text-white font-medium transition-colors hidden sm:block"
                 >
-                  Upload
+                  History
+                </Link>
+                <Link
+                  to="/food-scanner"
+                  className="text-pink-400 hover:text-pink-300 font-medium transition-colors hidden sm:flex items-center space-x-1"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Food Scanner</span>
                 </Link>
                 <Link
                   to="/store"
