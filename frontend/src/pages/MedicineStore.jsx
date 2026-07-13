@@ -1,57 +1,84 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter, SlidersHorizontal, PackageSearch } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import shopService from '../services/shopService';
-import ShopMedicineCard from '../components/shop/ShopMedicineCard';
+import { useState, useEffect, useCallback } from "react";
+import { Search, Filter, SlidersHorizontal, PackageSearch } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import shopService from "../services/shopService";
+import ShopMedicineCard from "../components/shop/ShopMedicineCard";
 
 const MedicineStore = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [medicines, setMedicines] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
-  const [category, setCategory] = useState(searchParams.get('category') || 'All');
-  const [rxRequired, setRxRequired] = useState(searchParams.get('rxRequired') || '');
-  const [sort, setSort] = useState(searchParams.get('sort') || '');
+
+  const [keyword, setKeyword] = useState(searchParams.get("keyword") || "");
+  const [category, setCategory] = useState(
+    searchParams.get("category") || "All",
+  );
+  const [rxRequired, setRxRequired] = useState(
+    searchParams.get("rxRequired") || "",
+  );
+  const [sort, setSort] = useState(searchParams.get("sort") || "");
 
   const categories = [
-    'All', 'Fever', 'Cold', 'Cough', 'Diabetes', 'Hypertension', 
-    'Pain Relief', 'Antibiotics', 'Allergy', 'Asthma', 'Heart', 
-    'Vitamin Supplements', 'Skin', 'Eye Drops', 'ENT', 'Digestive'
+    "All",
+    "Fever",
+    "Cold",
+    "Cough",
+    "Diabetes",
+    "Hypertension",
+    "Pain Relief",
+    "Antibiotics",
+    "Allergy",
+    "Asthma",
+    "Heart",
+    "Vitamin Supplements",
+    "Skin",
+    "Eye Drops",
+    "ENT",
+    "Digestive",
   ];
 
-  const fetchMedicines = async () => {
-    setLoading(true);
-    try {
-      const queryParams = new URLSearchParams();
-      if (keyword) queryParams.append('keyword', keyword);
-      if (category !== 'All') queryParams.append('category', category);
-      if (rxRequired !== '') queryParams.append('rxRequired', rxRequired);
-      if (sort) queryParams.append('sort', sort);
+  const fetchMedicines = useCallback(
+    async (searchKeyword = keyword) => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams();
+        if (searchKeyword) queryParams.append("keyword", searchKeyword);
+        if (category !== "All") queryParams.append("category", category);
+        if (rxRequired !== "") queryParams.append("rxRequired", rxRequired);
+        if (sort) queryParams.append("sort", sort);
 
-      const data = await shopService.getShopMedicines('?' + queryParams.toString());
-      setMedicines(data.medicines);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const data = await shopService.getShopMedicines(
+          "?" + queryParams.toString(),
+        );
+        setMedicines(data.medicines);
+      } catch (error) {
+        console.error(error);
+        setMedicines([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [keyword, category, rxRequired, sort],
+  );
 
   useEffect(() => {
-    fetchMedicines();
-    // Update URL
+    const timer = setTimeout(() => {
+      fetchMedicines(keyword);
+    }, 300);
+
     const params = {};
     if (keyword) params.keyword = keyword;
-    if (category !== 'All') params.category = category;
-    if (rxRequired !== '') params.rxRequired = rxRequired;
+    if (category !== "All") params.category = category;
+    if (rxRequired !== "") params.rxRequired = rxRequired;
     if (sort) params.sort = sort;
     setSearchParams(params);
-  }, [category, rxRequired, sort]);
+
+    return () => clearTimeout(timer);
+  }, [keyword, category, rxRequired, sort, fetchMedicines]);
 
   const handleSearch = (e) => {
     e.preventDefault();
-    fetchMedicines();
+    fetchMedicines(keyword);
     setSearchParams({ keyword, category, rxRequired, sort });
   };
 
@@ -66,20 +93,26 @@ const MedicineStore = () => {
           </h2>
 
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-slate-400 mb-3">Categories</label>
+            <label className="block text-sm font-semibold text-slate-400 mb-3">
+              Categories
+            </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500"
             >
-              {categories.map(c => (
-                <option key={c} value={c}>{c}</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-slate-400 mb-3">Prescription</label>
+            <label className="block text-sm font-semibold text-slate-400 mb-3">
+              Prescription
+            </label>
             <select
               value={rxRequired}
               onChange={(e) => setRxRequired(e.target.value)}
@@ -92,7 +125,9 @@ const MedicineStore = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-400 mb-3">Sort By</label>
+            <label className="block text-sm font-semibold text-slate-400 mb-3">
+              Sort By
+            </label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
@@ -126,6 +161,9 @@ const MedicineStore = () => {
               Search
             </button>
           </div>
+          <p className="mt-2 text-sm text-slate-400">
+            Typing will update results automatically with a small delay.
+          </p>
         </form>
 
         {loading ? (
@@ -135,8 +173,12 @@ const MedicineStore = () => {
         ) : medicines.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
             <PackageSearch className="w-20 h-20 mx-auto text-slate-700 mb-6" />
-            <h2 className="text-2xl font-bold text-white mb-2">No Medicines Found</h2>
-            <p className="text-slate-400">Try adjusting your search or filters.</p>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              No Medicines Found
+            </h2>
+            <p className="text-slate-400">
+              Try adjusting your search or filters.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

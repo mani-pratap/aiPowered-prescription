@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Search, SlidersHorizontal, ArrowLeft } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import cartService from '../services/cartService';
-import CartItem from '../components/shop/CartItem';
+import { useState, useEffect } from "react";
+import {
+  ShoppingCart,
+  Search,
+  SlidersHorizontal,
+  ArrowLeft,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import cartService from "../services/cartService";
+import CartItem from "../components/shop/CartItem";
 
 const Cart = () => {
   const navigate = useNavigate();
@@ -20,7 +25,7 @@ const Cart = () => {
       const data = await cartService.getCart();
       setCartItems(data);
     } catch (error) {
-      toast.error('Failed to load cart');
+      toast.error("Failed to load cart");
     } finally {
       setLoading(false);
     }
@@ -31,7 +36,7 @@ const Cart = () => {
       await cartService.updateCartItem(id, quantity);
       fetchCart();
     } catch (error) {
-      toast.error('Failed to update item');
+      toast.error("Failed to update item");
     }
   };
 
@@ -39,21 +44,25 @@ const Cart = () => {
     try {
       await cartService.removeFromCart(id);
       fetchCart();
-      toast.success('Item removed');
+      toast.success("Item removed");
     } catch (error) {
-      toast.error('Failed to remove item');
+      toast.error("Failed to remove item");
     }
   };
 
   const subtotal = cartItems.reduce((acc, item) => {
-    return acc + (item.medicine?.price || 0) * item.quantity;
+    const price = item.medicine?.price ?? 0;
+    const quantity = Number(item.quantity) || 0;
+    return acc + price * quantity;
   }, 0);
 
   const mrpTotal = cartItems.reduce((acc, item) => {
-    return acc + (item.medicine?.mrp || 0) * item.quantity;
+    const mrp = item.medicine?.mrp ?? item.medicine?.price ?? 0;
+    const quantity = Number(item.quantity) || 0;
+    return acc + mrp * quantity;
   }, 0);
 
-  const discount = mrpTotal - subtotal;
+  const discount = Math.max(mrpTotal - subtotal, 0);
 
   if (loading) {
     return (
@@ -66,7 +75,10 @@ const Cart = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center mb-8">
-        <button onClick={() => navigate(-1)} className="mr-4 p-2 text-slate-400 hover:text-white bg-slate-900 rounded-lg border border-slate-800">
+        <button
+          onClick={() => navigate(-1)}
+          className="mr-4 p-2 text-slate-400 hover:text-white bg-slate-900 rounded-lg border border-slate-800"
+        >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-3xl font-black text-white flex items-center">
@@ -78,9 +90,16 @@ const Cart = () => {
       {cartItems.length === 0 ? (
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center">
           <ShoppingCart className="w-20 h-20 mx-auto text-slate-700 mb-6" />
-          <h2 className="text-2xl font-bold text-white mb-4">Your cart is empty</h2>
-          <p className="text-slate-400 mb-8">Looks like you haven't added any medicines yet.</p>
-          <Link to="/store" className="inline-block px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Your cart is empty
+          </h2>
+          <p className="text-slate-400 mb-8">
+            Looks like you haven't added any medicines yet.
+          </p>
+          <Link
+            to="/store"
+            className="inline-block px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25"
+          >
             Browse Store
           </Link>
         </div>
@@ -88,23 +107,25 @@ const Cart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => (
-              <CartItem 
-                key={item._id} 
-                item={item} 
-                onUpdate={handleUpdate} 
-                onRemove={handleRemove} 
+              <CartItem
+                key={item._id}
+                item={item}
+                onUpdate={handleUpdate}
+                onRemove={handleRemove}
               />
             ))}
           </div>
 
           <div className="lg:col-span-1">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sticky top-24">
-              <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-4">Order Summary</h3>
-              
+              <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-4">
+                Order Summary
+              </h3>
+
               <div className="space-y-4 text-sm mb-6">
                 <div className="flex justify-between text-slate-400">
                   <span>Total MRP</span>
-                  <span className="line-through">₹{mrpTotal.toFixed(2)}</span>
+                  <span>₹{mrpTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-emerald-400 font-medium">
                   <span>Total Discount</span>
@@ -118,8 +139,12 @@ const Cart = () => {
 
               <div className="border-t border-slate-800 pt-4 mb-8">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-white">Total Amount</span>
-                  <span className="text-2xl font-black text-indigo-400">₹{subtotal.toFixed(2)}</span>
+                  <span className="text-lg font-bold text-white">
+                    Total Amount
+                  </span>
+                  <span className="text-2xl font-black text-indigo-400">
+                    ₹{subtotal.toFixed(2)}
+                  </span>
                 </div>
                 {discount > 0 && (
                   <p className="text-xs text-emerald-500 font-semibold mt-2 text-right">
@@ -128,7 +153,7 @@ const Cart = () => {
                 )}
               </div>
 
-              <Link 
+              <Link
                 to="/checkout"
                 className="w-full flex items-center justify-center py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/30 text-lg"
               >
