@@ -4,6 +4,12 @@ import Prescription from '../models/Prescription.js';
 const GENERIC_KEYWORDS = ['jan aushadhi', 'generic', 'pradhan mantri', 'aushadhi kendra', 'govt', 'government'];
 const BRANDED_KEYWORDS = ['apollo', 'medplus', 'wellness forever', 'guardian', 'noble plus', 'religare', 'sanjivani'];
 
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter'
+];
+
 // Helper to classify pharmacy
 const classifyPharmacy = (name = '') => {
   const lowerName = name.toLowerCase();
@@ -21,55 +27,78 @@ const classifyPharmacy = (name = '') => {
 // @access  Private
 export const geocodePrescriptionAddress = async (req, res, next) => {
   try {
-    const { prescriptionId } = req.body;
-    let addressToGeocode = null;
+    const { prescriptionId, manualAddress } = req.body;
+    let addressesToTry = [];
 
-    if (prescriptionId) {
+    if (manualAddress) {
+      addressesToTry.push(manualAddress);
+    } else if (prescriptionId) {
       const prescription = await Prescription.findOne({ _id: prescriptionId, user: req.user._id });
       if (prescription && prescription.structuredData && prescription.structuredData.doctor) {
         const doc = prescription.structuredData.doctor;
-        // Construct best possible address string
-        const parts = [];
-        if (doc.hospital) parts.push(doc.hospital);
-        if (doc.address) parts.push(doc.address);
-        if (parts.length > 0) {
-          addressToGeocode = parts.join(', ');
+        
+        // 1. Full strict address (Hospital + Address)
+        const fullParts = [];
+        if (doc.hospital) fullParts.push(doc.hospital);
+        if (doc.address) fullParts.push(doc.address);
+        if (fullParts.length > 0) {
+          addressesToTry.push(fullParts.join(', '));
+        }
+
+        // 2. Fallback: Just the address (removes highly specific clinic names which Nominatim often fails on)
+        if (doc.address) {
+          addressesToTry.push(doc.address);
+        }
+
+        // 3. Fallback: Just the hospital name (in case the address was malformed but the hospital is a famous landmark)
+        if (doc.hospital) {
+          addressesToTry.push(doc.hospital);
         }
       }
     }
 
-    if (!addressToGeocode) {
-      return res.status(404).json({ success: false, message: 'No valid address found in prescription.' });
+    if (addressesToTry.length === 0) {
+      return res.status(404).json({ success: false, message: 'No valid address found to geocode.' });
     }
 
-    // Call Nominatim API
-    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-      params: {
-        q: addressToGeocode,
-        format: 'json',
-        limit: 1
-      },
-      headers: {
-        'User-Agent': 'ArogyaSaathi-App'
-      }
-    });
+    // Intelligent Retry Loop for Nominatim
+    for (const address of addressesToTry) {
+      try {
+        console.log(`[GEOCODE] Attempting Nominatim with: "${address}"`);
+        const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+          params: {
+            q: address,
+            format: 'json',
+            limit: 1
+          },
+          headers: {
+            'User-Agent': 'ArogyaSaathi-App'
+          }
+        });
 
-    if (response.data && response.data.length > 0) {
-      const { lat, lon, display_name } = response.data[0];
-      return res.json({
-        success: true,
-        data: {
-          lat: parseFloat(lat),
-          lng: parseFloat(lon),
-          displayName: display_name,
-          originalAddress: addressToGeocode
+        if (response.data && response.data.length > 0) {
+          const { lat, lon, display_name } = response.data[0];
+          console.log(`[GEOCODE] ✔ Success for: "${address}" -> ${lat}, ${lon}`);
+          return res.json({
+            success: true,
+            data: {
+              lat: parseFloat(lat),
+              lng: parseFloat(lon),
+              displayName: display_name,
+              originalAddress: address
+            }
+          });
+        } else {
+          console.log(`[GEOCODE] ✖ No results for: "${address}"`);
         }
-      });
-    } else {
-      return res.status(404).json({ success: false, message: 'Could not resolve address to coordinates.' });
+      } catch (err) {
+        console.error(`[GEOCODE] API Error for: "${address}"`, err.message);
+      }
     }
+
+    return res.status(404).json({ success: false, message: 'Could not resolve any address variants to coordinates.' });
   } catch (error) {
-    console.error("Geocoding Error:", error);
+    console.error("Geocoding Internal Error:", error);
     next(error);
   }
 };
@@ -91,26 +120,55 @@ export const getNearbyPharmacies = async (req, res, next) => {
         node["amenity"="pharmacy"](around:${radius},${lat},${lng});
         way["amenity"="pharmacy"](around:${radius},${lat},${lng});
         relation["amenity"="pharmacy"](around:${radius},${lat},${lng});
+        node["healthcare"="pharmacy"](around:${radius},${lat},${lng});
+        node["dispensing"="yes"](around:${radius},${lat},${lng});
       );
       out center;
     `;
-    
-    const response = await axios.get('https://overpass-api.de/api/interpreter', {
-      params: { data: query },
-      headers: { 'User-Agent': 'ArogyaSaathi-App' }
-    });
 
-    let pharmacies = response.data.elements.map(el => {
+    let response = null;
+    let successEndpoint = null;
+    
+    // Robust Overpass Fallback Matrix
+    for (const endpoint of OVERPASS_ENDPOINTS) {
+      try {
+        console.log(`[OVERPASS] Attempting query on: ${endpoint}`);
+        response = await axios.get(endpoint, {
+          params: { data: query },
+          headers: { 'User-Agent': 'ArogyaSaathi-App' },
+          timeout: 15000
+        });
+        
+        if (response.data && response.data.elements) {
+          successEndpoint = endpoint;
+          console.log(`[OVERPASS] ✔ Success on: ${endpoint} (Found ${response.data.elements.length} elements)`);
+          break; // Break the loop on success
+        }
+      } catch (err) {
+        console.warn(`[OVERPASS] ✖ Failed on: ${endpoint} - ${err.message}`);
+        // Continue to the next endpoint
+      }
+    }
+
+    if (!response || !response.data || !response.data.elements) {
+      return res.status(502).json({ success: false, message: 'All Overpass endpoints failed to return data.' });
+    }
+
+    // Deduplicate elements by ID or coordinates
+    const uniquePharmacies = new Map();
+
+    response.data.elements.forEach(el => {
       const pLat = el.lat || el.center?.lat;
       const pLon = el.lon || el.center?.lon;
       const tags = el.tags || {};
       const name = tags.name || 'Local Medical Store';
       
-      // Calculate fake distance since Overpass doesn't return exact driving distance easily
-      // We will let frontend calculate haversine distance or just calculate here
       const distanceMeters = calculateDistance(lat, lng, pLat, pLon);
       
-      return {
+      // Filter out weird data (extremely far outliers)
+      if (distanceMeters > radius * 1.5) return; 
+
+      const pharmacy = {
         id: el.id,
         lat: pLat,
         lon: pLon,
@@ -121,27 +179,38 @@ export const getNearbyPharmacies = async (req, res, next) => {
         category: classifyPharmacy(name),
         distanceMeters,
         isOpenNow: checkIsOpenNow(tags.opening_hours),
-        // Fake rating between 3.5 and 5.0 for UI aesthetics
         rating: (Math.random() * (5.0 - 3.5) + 3.5).toFixed(1)
       };
+
+      // Simple deduplication by coordinate string to prevent overlapping UI nodes
+      const coordKey = `${pLat.toFixed(4)}_${pLon.toFixed(4)}`;
+      if (!uniquePharmacies.has(coordKey)) {
+        uniquePharmacies.set(coordKey, pharmacy);
+      } else {
+        // If the new one has a better name, replace the default "Local Medical Store"
+        if (pharmacy.name !== 'Local Medical Store' && uniquePharmacies.get(coordKey).name === 'Local Medical Store') {
+           uniquePharmacies.set(coordKey, pharmacy);
+        }
+      }
     });
 
-    // Sort by distance
-    pharmacies.sort((a, b) => a.distanceMeters - b.distanceMeters);
+    const pharmaciesList = Array.from(uniquePharmacies.values());
+    pharmaciesList.sort((a, b) => a.distanceMeters - b.distanceMeters);
 
     res.json({
       success: true,
-      data: pharmacies
+      endpointUsed: successEndpoint,
+      data: pharmaciesList
     });
   } catch (error) {
-    console.error("Overpass API Error:", error);
+    console.error("Overpass API Global Error:", error);
     next(error);
   }
 };
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // metres
-  const φ1 = lat1 * Math.PI/180; // φ, λ in radians
+  const R = 6371e3;
+  const φ1 = lat1 * Math.PI/180;
   const φ2 = lat2 * Math.PI/180;
   const Δφ = (lat2-lat1) * Math.PI/180;
   const Δλ = (lon2-lon1) * Math.PI/180;
@@ -155,8 +224,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 }
 
 function checkIsOpenNow(openingHoursStr) {
-  if (!openingHoursStr) return true; // Assume open if unknown for hackathon
+  if (!openingHoursStr) return true;
   if (openingHoursStr.toLowerCase().includes('24/7')) return true;
-  // Simple heuristic
   return true; 
 }
