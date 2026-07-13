@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pill, Calendar, User, Building, Phone, Clock, AlertCircle } from 'lucide-react';
+import { Pill, Calendar, User, Building, Phone, Clock, AlertCircle, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const OCRResultCard = ({ data }) => {
   if (!data) return null;
@@ -11,10 +12,23 @@ const OCRResultCard = ({ data }) => {
         <div className="bg-slate-800/50 rounded-2xl p-5 border border-white/5">
           <div className="flex items-start space-x-3">
             <Building className="w-6 h-6 text-indigo-400 mt-1" />
-            <div>
-              <h3 className="text-lg font-semibold text-white">{data.doctor?.hospital || 'Hospital Unknown'}</h3>
-              <p className="text-slate-400 text-sm mt-1">{data.doctor?.address}</p>
-              <div className="flex items-center text-slate-400 text-sm mt-2">
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{data.doctor?.hospital || 'Hospital Unknown'}</h3>
+                  <p className="text-slate-400 text-sm mt-1 pr-2">{data.doctor?.address}</p>
+                </div>
+                {data.doctor?.address && (
+                  <Link 
+                    to="/pharmacies" 
+                    title="Find nearby pharmacies for this location"
+                    className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors flex shrink-0 items-center justify-center border border-emerald-500/20"
+                  >
+                    <MapPin className="w-5 h-5" />
+                  </Link>
+                )}
+              </div>
+              <div className="flex items-center text-slate-400 text-sm mt-3 pt-3 border-t border-white/5">
                 <Phone className="w-4 h-4 mr-1" />
                 {data.doctor?.phone || 'No contact available'}
               </div>

@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import html2pdf from 'html2pdf.js';
 import diseaseAnalysisService from '../services/diseaseAnalysisService';
 import DiseaseCard from '../components/analysis/DiseaseCard';
+import VisualEducation from '../components/analysis/VisualEducation';
 import ConfidenceIndicator from '../components/analysis/ConfidenceIndicator';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 
@@ -195,6 +196,9 @@ const DiseaseAnalysis = () => {
             </div>
           </div>
         </div>
+        
+        {/* Visual Disease Education Section */}
+        <VisualEducation predictedDisease={activeView.predictedDisease} />
 
         {/* Disclaimer */}
         <div className="mt-8 bg-slate-900/50 border border-slate-800/50 p-4 rounded-lg">
