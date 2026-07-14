@@ -1,4 +1,8 @@
 # 🤖 AI-Powered Smart Prescription Assistant
+_https://ai-powered-prescription.vercel.app/_
+
+dummy_id : amanjain123@gmail.com
+dummy_pass : 111111
 
 > **From Prescription to Recovery — Your AI Healthcare Companion.**
 
