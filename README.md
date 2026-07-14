@@ -1,8 +1,9 @@
 # 🤖 AI-Powered Smart Prescription Assistant
-_https://ai-powered-prescription.vercel.app/_
 
+_https://ai-powered-prescription.vercel.app/_
 dummy_id : amanjain123@gmail.com
 dummy_pass : 111111
+https://cloud.mongodb.com/ > Project >> prescription_assistant
 
 > **From Prescription to Recovery — Your AI Healthcare Companion.**
 
